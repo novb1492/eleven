@@ -1,0 +1,102 @@
+//querydsl 추가
+buildscript {
+	ext {
+		queryDslVersion = "5.0.0"
+	}
+}
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '2.7.6'
+	id 'io.spring.dependency-management' version '1.0.15.RELEASE'
+	//querydsl 추가
+	id "com.ewerk.gradle.plugins.querydsl" version "1.0.10"
+	id 'org.hidetake.ssh' version '2.10.1'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+dependencies {
+	//  https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-data-redis
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-redis', version: '2.7.6'
+	//querydsl 추가
+	implementation "com.querydsl:querydsl-jpa:${queryDslVersion}"
+	implementation "com.querydsl:querydsl-apt:${queryDslVersion}"
+	implementation 'com.navercorp.lucy:lucy-xss-servlet:2.0.1'
+	// https://mvnrepository.com/artifact/com.auth0/java-jwt jwt
+	implementation group: 'com.auth0', name: 'java-jwt', version: '3.18.2'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	// https://mvnrepository.com/artifact/com.googlecode.json-simple/json-simple json
+	implementation group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1.1'
+	implementation 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.5.7'
+	// https://mvnrepository.com/artifact/org.springframework.cloud/spring-cloud-starter-aws
+	implementation group: 'org.springframework.cloud', name: 'spring-cloud-starter-aws', version: '2.2.5.RELEASE'
+	// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-aop aop
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-aop', version: '2.7.4'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	compileOnly 'org.projectlombok:lombok'
+	runtimeOnly 'com.mysql:mysql-connector-j'
+	annotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.security:spring-security-test'
+}
+remotes {
+	kimjunyoungdevec2  {
+		host = 'ec2-3-36-147-233.ap-northeast-2.compute.amazonaws.com'
+		user = 'ec2-user'
+		identity = file("C:/Users/Win10/Desktop/keys/home3.pem")
+	}
+}
+
+task deploy {
+	doLast {
+		ssh.run {
+			session(remotes.kimjunyoungdevec2 ) {
+				put from: 'C:/projects/FILLER_LAND_SERVER2/build/libs/FILLER_LAND_SERVER-0.0.1-SNAPSHOT.jar', into: '/home/ec2-user'
+			}
+		}
+	}
+}
+//querydsl 추가 시작
+def querydslDir = "$buildDir/generated/querydsl"
+
+querydsl {
+	jpa = true
+	querydslSourcesDir = querydslDir
+}
+sourceSets {
+	main.java.srcDir querydslDir
+}
+compileQuerydsl {
+	options.annotationProcessorPath = configurations.querydsl
+}
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+	querydsl.extendsFrom compileClasspath
+}
+
+// 여기부터 gradle 5.0 이후로 추가
+configurations {
+	querydsl.extendsFrom compileClasspath
+}
+
+compileQuerydsl {
+	options.annotationProcessorPath = configurations.querydsl
+}
+tasks.named('test') {
+	useJUnitPlatform()
+}
