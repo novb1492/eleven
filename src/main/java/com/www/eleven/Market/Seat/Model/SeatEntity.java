@@ -48,7 +48,7 @@ public class SeatEntity {
     private Integer soldOut;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "M_ID",referencedColumnName = "MARKET_ID")
+    @JoinColumn(name = "M_ID",referencedColumnName = "MARKET_ID" ,nullable = false)
     private MarketEntity marketEntity;
 
     @Embedded

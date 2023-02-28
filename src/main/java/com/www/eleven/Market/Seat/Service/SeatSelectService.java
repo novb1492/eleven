@@ -18,9 +18,9 @@ import java.util.List;
 public class SeatSelectService {
     private final SeatRepo seatRepo;
 
-    public JSONObject selectByFloor(int floor){
+    public JSONObject selectByFloor(int floor,long mid){
         JSONObject response = new JSONObject();
-        List<SelectSeatDto> selectSeatDtos = seatRepo.findByStateAndFloor(Text.trueState, floor);
+        List<SelectSeatDto> selectSeatDtos = seatRepo.findByStateAndFloor(Text.trueState, floor,mid);
         List<SelectSeatDto> seats = new ArrayList<>();
         for(SelectSeatDto s: selectSeatDtos){
             if(s.getKind().equals("drawing")){

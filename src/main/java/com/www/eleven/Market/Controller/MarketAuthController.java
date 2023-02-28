@@ -17,9 +17,9 @@ import java.util.List;
 public class MarketAuthController {
     private final SeatSelectService seatSelectService;
 
-    @RequestMapping(value = "/api/auth/{floor}/seat",method = RequestMethod.GET)
-    public ResponseEntity<?>getSeatByFloor(@PathVariable Integer floor){
-        JSONObject response=seatSelectService.selectByFloor(floor);
+    @RequestMapping(value = "/api/auth/{floor}/seat/{mid}",method = RequestMethod.GET)
+    public ResponseEntity<?>getSeatByFloor(@PathVariable Integer floor,@PathVariable Long mid){
+        JSONObject response=seatSelectService.selectByFloor(floor,mid);
         return ResponseEntity.ok().body(response);
     }
 }
