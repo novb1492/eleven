@@ -290,7 +290,7 @@ public class TestController {
         response.put("paymentid",new Random().nextInt(10));
         return ResponseEntity.ok().body(response);
     }
-    @RequestMapping(value = "/api/auth/product/{kindId}/list/{seatId}/time")
+//    @RequestMapping(value = "/api/auth/product/{kindId}/list/{seatId}/time")
     public ResponseEntity<?>getProducts(@PathVariable Long seatId,@PathVariable Integer kindId,HttpServletResponse httpServletResponse){
         String token = jwtService.getAccessToken("1");
         redisTemplate.opsForHash().put("login","token",token);
