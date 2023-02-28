@@ -126,7 +126,7 @@ public class TestController {
         return ResponseEntity.ok().body(response);
     }
 
-    @RequestMapping(value = "/api/auth/time/{size}")
+//    @RequestMapping(value = "/api/auth/time/{size}")
     public ResponseEntity<?>plusTime(@PathVariable Integer size){
         System.out.println(size);
         JSONObject response = new JSONObject();
