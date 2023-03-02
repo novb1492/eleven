@@ -12,5 +12,6 @@ public class Text {
     public static String redisLoginKey = "login";
     public static String cantFindInDBNum = "404";
     public static int needReLoginState = 403;
+    public static int waitState = 3;
 
 }

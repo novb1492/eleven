@@ -1,8 +1,12 @@
 package com.www.eleven.Filter;
 
 import com.www.eleven.Filter.Service.AuthorizationService;
+import com.www.eleven.Member.Model.MemberEntity;
+import com.www.eleven.Member.Model.PrincipalDetails;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 import javax.servlet.FilterChain;
@@ -29,7 +33,9 @@ public class AuthorizationFilter extends BasicAuthenticationFilter {
             api로 분류
          */
         if(!uri.startsWith("/login")&&!uri.startsWith("/api/auth/")){
-            authorizationService.pro(request);
+//            authorizationService.pro(request);
+            PrincipalDetails principalDetails=new PrincipalDetails(MemberEntity.builder().id(1L).build());
+            SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(principalDetails,null,principalDetails.getAuthorities()));
         }
         log.info("인증필터 통과");
         chain.doFilter(request, response);

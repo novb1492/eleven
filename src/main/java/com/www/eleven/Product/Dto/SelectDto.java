@@ -16,11 +16,13 @@ public class SelectDto{
     Integer soldOut;
     String price;
 
-    public SelectDto(ProductEntity productEntity) {
-        this.name = productEntity.getName();
-        this.id = productEntity.getId();
-        this.img = productEntity.getImgUrl();
-        this.soldOut = productEntity.getCommonColumn().getState();
-        this.price = productEntity.getPrice();
+    public SelectDto(String name, Long id, String img, Integer soldOut, String price) {
+        this.name = name;
+        this.id = id;
+        this.img = img;
+        this.soldOut = soldOut;
+        this.price = price;
     }
+
+
 }

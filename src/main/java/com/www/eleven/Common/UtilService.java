@@ -20,7 +20,6 @@ import java.util.Map;
 
 @Slf4j
 public class UtilService {
-
     /**
      * 예외 로그 남기는 함수
      * @param value
@@ -154,5 +153,14 @@ public class UtilService {
             e.printStackTrace();
             throw new RuntimeException("인증정보를 찾을 수 없습니다");
         }
+    }
+
+    /**
+     * db 가격에서 ,제거하는 함수
+     * @param price
+     * @return
+     */
+    public static int getPriceToComma(String price){
+        return Integer.parseInt(price.replace(",", ""));
     }
 }

@@ -10,6 +10,6 @@ import java.util.Optional;
 
 public interface PriceRepo extends JpaRepository<PriceEntity,Long> {
 
-    @Query("select p from PriceEntity p where p.marketEntity.id=:id and p.hour <=:h")
+    @Query(value = "select p from PriceEntity p where p.marketEntity.id=:id and p.hour <=:h order by p.hour desc")
     List<PriceEntity> findByMidAndHour(@Param("id") long mid, @Param("h") int hour);
 }

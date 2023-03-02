@@ -44,6 +44,9 @@ public class SeatEntity {
     @Column(name = "TOP_CSS",nullable = false,length = 10)
     private String top;
 
+    @Column(name = "PRICE",nullable = false,length = 10)
+    private String price;
+
     @Column(name = "SOLD_OUT",columnDefinition = "TINYINT")
     private Integer soldOut;
 
