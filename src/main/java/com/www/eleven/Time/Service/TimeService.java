@@ -23,10 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -38,9 +35,9 @@ public class TimeService {
     private final PaymentRepo paymentRepo;
     private final RedisTemplate<String, Object> redisTemplate;
     @Transactional(rollbackFor = Exception.class)
-    public void save(TimeInsertDto data){
+    public JSONObject save(TimeInsertDto data){
         Arrays.sort(data.getChoiceTimes());
-        System.out.println(data);
+        JSONObject response = new JSONObject();
         Integer[] hourArr = data.getChoiceTimes();
         int fh = hourArr[0];
         int lh = hourArr[hourArr.length - 1];
@@ -48,11 +45,18 @@ public class TimeService {
         List<Map<String, Object>> cps = data.getChoiceProducts();
         int totalPrice = 0;
         /*
-            구매상품 총액계산
+            구매상품 총액계산,요청 제품 분류
         * */
+        List<Map<String,Object>> orderProductAndCountList = new ArrayList<>();
         for(Map<String,Object>cp:cps){
             ProductEntity p = productRepo.findByIdAndState(Long.parseLong(cp.get("id").toString()), Text.trueState).orElseThrow(() -> new IllegalArgumentException("6&&&" + cp.get("name")));
-            totalPrice += UtilService.getPriceToComma(p.getPrice());
+            int count = Integer.parseInt(cp.get("count").toString());
+            totalPrice += UtilService.getPriceToComma(p.getPrice())*count;
+            LinkedHashMap<String, Object> stringObjectLinkedHashMap = new LinkedHashMap<>();
+            stringObjectLinkedHashMap.put("id", p.getId());
+            stringObjectLinkedHashMap.put("pri", p.getPrice());
+            stringObjectLinkedHashMap.put("cou", count);
+            orderProductAndCountList.add(stringObjectLinkedHashMap);
         }
         /*
             해당 매장 최소주문 금액 확인
@@ -75,7 +79,7 @@ public class TimeService {
         paymentRepo.save(paymentEntity);
         long pid = paymentEntity.getId();
         for(int hour:hourArr){
-            timeRepo.save(TimeInsertDto.dtoToEntity(hour,marketId,seatId,pid));
+            timeRepo.save(TimeInsertDto.dtoToEntity(hour,marketId,seatId,pid,orderProductAndCountList));
         }
         /*
             결제 요청후 검증 위해 redis 저장
@@ -85,8 +89,13 @@ public class TimeService {
         payInfo.put("pid", pid);
         payInfo.put("seatId", seatId);
         payInfo.put("marketId", marketId);
+        payInfo.put("memberId", UtilService.getLoginInfo().getId());
+        payInfo.put("created", LocalDateTime.now().toString());
+        payInfo.put("totalPrice",totalPrice);
         redisTemplate.opsForHash().put(pk, pk, payInfo);
-
+        response.put("price",totalPrice);
+        response.put("paymentid",pid+"_time");
+        return response;
     }
     public void checkHour(int fh){
         int nh = LocalDateTime.now().getHour();

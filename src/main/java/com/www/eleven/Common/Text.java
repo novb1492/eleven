@@ -14,4 +14,5 @@ public class Text {
     public static int needReLoginState = 403;
     public static int waitState = 3;
 
+
 }

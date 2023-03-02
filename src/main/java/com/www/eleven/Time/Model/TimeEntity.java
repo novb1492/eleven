@@ -51,6 +51,9 @@ public class TimeEntity {
     @Column(name = "TIME",nullable = false)
     private Timestamp time;
 
+    @Column(name = "PRODUCTS",nullable = false,length = 100)
+    private String products;
+
     @Embedded
     private CommonColumn commonColumn;
 }

@@ -16,6 +16,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Slf4j
@@ -162,5 +163,15 @@ public class UtilService {
      */
     public static int getPriceToComma(String price){
         return Integer.parseInt(price.replace(",", ""));
+    }
+
+    public static LinkedHashMap<String,Object> getPaymentInfoInStringArr(String[] values){
+        LinkedHashMap<String, Object> stringObjectLinkedHashMap = new LinkedHashMap<>();
+        System.out.println(values);
+        for (String value : values) {
+            String []sa=value.split("=");
+            stringObjectLinkedHashMap.put(sa[0], sa[1]);
+        }
+        return stringObjectLinkedHashMap;
     }
 }

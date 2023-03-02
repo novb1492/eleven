@@ -22,11 +22,8 @@ public class TimeController {
 
     @RequestMapping(value = "/save",method = RequestMethod.POST)
     public ResponseEntity<?>save(@Valid @RequestBody TimeInsertDto data){
-        JSONObject response = new JSONObject();
-        timeService.save(data);
+        JSONObject response = timeService.save(data);
         response.put("name", "커피와자리");
-        response.put("price",1000);
-        response.put("paymentid",new Random().nextInt(10));
         return ResponseEntity.ok().body(response);
     }
 }

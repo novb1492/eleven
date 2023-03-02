@@ -30,13 +30,14 @@ public class TimeInsertDto {
     @Size(min = 1,message = "3")
     private List<Map<String,Object>> choiceProducts;
 
-    public static TimeEntity dtoToEntity(int hour,long marketId,long seatId,long paymentId){
+    public static TimeEntity dtoToEntity(int hour,long marketId,long seatId,long paymentId, List<Map<String,Object>>proAndCounts){
         return TimeEntity.builder()
                 .commonColumn(CommonColumn.set(Text.waitState))
                 .time(Timestamp.valueOf(LocalDate.now()+" "+hour+":00:00"))
                 .marketEntity(MarketEntity.builder().id(marketId).build())
                 .insertUser(MemberEntity.builder().id(UtilService.getLoginInfo().getId()).build())
                 .seatEntity(SeatEntity.builder().id(seatId).build())
+                .products(proAndCounts.toString())
                 .paymentEntity(PaymentEntity.builder().id(paymentId).build())
                 .build();
     }
