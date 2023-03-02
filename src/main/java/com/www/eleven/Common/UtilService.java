@@ -4,6 +4,12 @@ import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.www.eleven.Member.Model.MemberEntity;
 import com.www.eleven.Member.Model.PrincipalDetails;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -25,7 +31,7 @@ public class UtilService {
      * 예외 로그 남기는 함수
      * @param value
      * @param message
-     * @param clazz
+     * @param exMessage
      */
     public static void writeFailLog(Object value,String message,String exMessage){
         try {
@@ -165,13 +171,51 @@ public class UtilService {
         return Integer.parseInt(price.replace(",", ""));
     }
 
-    public static LinkedHashMap<String,Object> getPaymentInfoInStringArr(String[] values){
-        LinkedHashMap<String, Object> stringObjectLinkedHashMap = new LinkedHashMap<>();
-        System.out.println(values);
+    /**
+     * kg이니시스 결제 성공시 결제 내역 가져오는 함수
+     * @param values
+     * @return
+     */
+    public static  LinkedHashMap<String, Object> setPaymentInfo(String[] values){
+        LinkedHashMap<String, Object> paymentInfo = new LinkedHashMap<>();
         for (String value : values) {
-            String []sa=value.split("=");
-            stringObjectLinkedHashMap.put(sa[0], sa[1]);
+            if(value.contains("=")){
+                String[] val = value.split("=");
+                try {
+                    paymentInfo.put(val[0], val[1]);
+                }catch (ArrayIndexOutOfBoundsException e){
+                    paymentInfo.put(val[0], null);
+                }
+            }
         }
-        return stringObjectLinkedHashMap;
+        return paymentInfo;
+    }
+
+    public static String[] getKgValues(String P_REQ_URL){
+        GetMethod method = new GetMethod(P_REQ_URL);
+        HttpClient client = new HttpClient();
+        method.getParams().setParameter(HttpMethodParams.RETRY_HANDLER,
+                new DefaultHttpMethodRetryHandler(3, false));
+        try {
+            int statusCode = client.executeMethod(method);
+
+            if (statusCode != HttpStatus.SC_OK) {
+                log.info("Method failed: {}", method.getStatusLine());
+
+            }
+
+// -------------------- 승인결과 수신 -------------------------------------------------
+
+            byte[] responseBody = method.getResponseBody();
+            String[] values = new String(responseBody).split("&");
+            return values;
+
+        } catch (Exception e) {
+            log.info("Fatal protocol violation: {}", e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("결제 성공 후 내역 추출중 에러가 발생했습니다");
+        }finally {
+            method.releaseConnection();
+        }
     }
 }

@@ -36,7 +36,6 @@ public class PaymentAuthController {
         String P_TID = request.getParameter("P_TID");                   // 인증 거래번호
         String P_REQ_URL = request.getParameter("P_REQ_URL");    // 결제요청 URL
         String P_NOTI = request.getParameter("P_NOTI");              // 기타주문정보
-
         String P_MID = "INIpayTest";
         log.info("status:{}", P_STATUS);
         // 승인요청을 위한 P_MID, P_TID 세팅
@@ -47,51 +46,13 @@ public class PaymentAuthController {
             log.info("<br>");
             log.info(P_RMESG1);
         }// STEP2 에 이어 인증결과가 성공일(P_STATUS=00) 경우 STEP2 에서 받은 인증결과로 아래 승인요청 진행
-
-
         else {
-
             // 승인요청할 데이터
             P_REQ_URL = P_REQ_URL + "?P_TID=" + P_TID + "&P_MID=" + P_MID;
+            String[] values = UtilService.getKgValues(P_REQ_URL);
+            LinkedHashMap<String, Object> paymentInfo = UtilService.setPaymentInfo(values);
+            paymentService.changeStateAtDb(paymentInfo);
 
-
-            GetMethod method = new GetMethod(P_REQ_URL);
-            HttpClient client = new HttpClient();
-            method.getParams().setParameter(HttpMethodParams.RETRY_HANDLER,
-                    new DefaultHttpMethodRetryHandler(3, false));
-
-            HashMap<String, String> map = new HashMap<String, String>();
-
-            try {
-                int statusCode = client.executeMethod(method);
-
-                if (statusCode != HttpStatus.SC_OK) {
-                    log.info("Method failed: {}", method.getStatusLine());
-
-                }
-
-
-// -------------------- 승인결과 수신 -------------------------------------------------
-
-                byte[] responseBody = method.getResponseBody();
-                String[] values = new String(responseBody).split("&");
-                LinkedHashMap<String, Object> paymentInfo = new LinkedHashMap<>();
-                for (String value : values) {
-//                    String[] val = value.split("=");
-//                    paymentInfo.put(val[0], val[1]);
-                    log.info("val:{}", value);
-                }
-                paymentService.changeStateAtDb(paymentInfo);
-
-            } catch (HttpException e) {
-                log.info("Fatal protocol violation: {}", e.getMessage());
-                e.printStackTrace();
-            } catch (IOException e) {
-                log.info("Fatal transport error: {}", e.getMessage());
-                e.printStackTrace();
-            } finally {
-                method.releaseConnection();
-            }
         }
     }
 }

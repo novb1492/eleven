@@ -94,7 +94,7 @@ public class TimeService {
         payInfo.put("totalPrice",totalPrice);
         redisTemplate.opsForHash().put(pk, pk, payInfo);
         response.put("price",totalPrice);
-        response.put("paymentid",pid+"_time");
+        response.put("paymentid",pid);
         return response;
     }
     public void checkHour(int fh){
