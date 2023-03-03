@@ -9,6 +9,7 @@ import com.www.eleven.Market.Seat.Repo.SeatRepo;
 import com.www.eleven.Member.Model.MemberEntity;
 import com.www.eleven.Payment.Model.PaymentEntity;
 import com.www.eleven.Payment.Repo.PaymentRepo;
+import com.www.eleven.Payment.Service.PaymentService;
 import com.www.eleven.Price.Model.PriceEntity;
 import com.www.eleven.Price.Repo.PriceRepo;
 import com.www.eleven.Product.Model.ProductEntity;
@@ -32,8 +33,14 @@ public class TimeService {
     private final SeatRepo seatRepo;
     private final ProductRepo productRepo;
     private final PriceRepo priceRepo;
-    private final PaymentRepo paymentRepo;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final PaymentRepo paymentRepo;
+
+    /**
+     * 결제 요청 정보 및 예약정보 저장 함수
+     * @param data
+     * @return
+     */
     @Transactional(rollbackFor = Exception.class)
     public JSONObject save(TimeInsertDto data){
         Arrays.sort(data.getChoiceTimes());
@@ -49,7 +56,7 @@ public class TimeService {
         * */
         List<Map<String,Object>> orderProductAndCountList = new ArrayList<>();
         for(Map<String,Object>cp:cps){
-            ProductEntity p = productRepo.findByIdAndState(Long.parseLong(cp.get("id").toString()), Text.trueState).orElseThrow(() -> new IllegalArgumentException("6&&&" + cp.get("name")));
+            ProductEntity p = productRepo.findByIdAndState(Long.parseLong(cp.get("id").toString()), Text.trueState).orElseThrow(() -> new IllegalArgumentException(Text.notFoundInDb+"&&&" + cp.get("name")));
             int count = Integer.parseInt(cp.get("count").toString());
             totalPrice += UtilService.getPriceToComma(p.getPrice())*count;
             LinkedHashMap<String, Object> stringObjectLinkedHashMap = new LinkedHashMap<>();
@@ -62,7 +69,7 @@ public class TimeService {
             해당 매장 최소주문 금액 확인
          */
         long seatId = data.getSeatId();
-        SeatEntity seatEntity = seatRepo.findByIdAndState(Text.trueState, seatId).orElseThrow(()->new IllegalArgumentException("5"));
+        SeatEntity seatEntity = seatRepo.findByIdAndState(Text.trueState, seatId).orElseThrow(()->new IllegalArgumentException(Text.notFoundInDb));
         long marketId = seatEntity.getMarketEntity().getId();
         int cp = UtilService.getPriceToComma(priceRepo.findByMidAndHour(marketId, hourArr.length).get(0).getPrice());
         if(totalPrice<cp){
@@ -72,19 +79,22 @@ public class TimeService {
         /*
             결제 정보 및 예약정보 대기로 저장
          */
-        PaymentEntity paymentEntity = PaymentEntity.builder()
-                .commonColumn(CommonColumn.builder().state(Text.waitState).build())
-                .price(totalPrice)
-                .buyer(MemberEntity.builder().id(UtilService.getLoginInfo().getId()).build()).build();
-        paymentRepo.save(paymentEntity);
+        PaymentEntity paymentEntity = savePayment(totalPrice);
         long pid = paymentEntity.getId();
-        for(int hour:hourArr){
-            timeRepo.save(TimeInsertDto.dtoToEntity(hour,marketId,seatId,pid,orderProductAndCountList));
-        }
+        save(hourArr, marketId, seatId, pid, orderProductAndCountList);
         /*
             결제 요청후 검증 위해 redis 저장
          */
-        String pk = Long.toString(pid) +  Long.toString(seatId) +  Long.toString(marketId);
+        String pk = Long.toString(pid);
+        saveOrderInRedis(pid,seatId,marketId,totalPrice,hourArr,pk);
+        /*
+            결제창 생성위해 필요 값 전달
+         */
+        response.put("price",totalPrice);
+        response.put("paymentid",pid);
+        return response;
+    }
+    private void saveOrderInRedis(long pid,long seatId,long marketId,int totalPrice,Integer[] hourArr,String pk){
         LinkedHashMap<String, Object> payInfo = new LinkedHashMap<>();
         payInfo.put("pid", pid);
         payInfo.put("seatId", seatId);
@@ -92,15 +102,52 @@ public class TimeService {
         payInfo.put("memberId", UtilService.getLoginInfo().getId());
         payInfo.put("created", LocalDateTime.now().toString());
         payInfo.put("totalPrice",totalPrice);
+        payInfo.put("hourArr",hourArr);
         redisTemplate.opsForHash().put(pk, pk, payInfo);
-        response.put("price",totalPrice);
-        response.put("paymentid",pid);
-        return response;
+    }
+    /**
+     * 예약 정보 저장함수
+     * @param hourArr
+     * @param marketId
+     * @param seatId
+     * @param pid
+     * @param orderProductAndCountList
+     * @return
+     */
+    public List<TimeEntity> save(Integer[]hourArr,long marketId,long seatId,long pid,List<Map<String,Object>> orderProductAndCountList){
+        List<TimeEntity> timeEntities = new ArrayList<>();
+        for(int hour:hourArr){
+            checkAlready(seatId, hour);
+            TimeEntity timeEntity = TimeInsertDto.dtoToEntity(hour, marketId, seatId, pid, orderProductAndCountList);
+            timeRepo.save(timeEntity);
+            timeEntities.add(timeEntity);
+        }
+        return timeEntities;
+    }
+    public void checkAlready(long seatId,int hour){
+        TimeEntity already= timeRepo.findBySeatAndHourLock(seatId, UtilService.hourMakeToday(hour),Text.trueState).orElseGet(()-> null);
+        if(already!=null){
+            throw new IllegalArgumentException(Text.alreadyReservation);
+        }
     }
     public void checkHour(int fh){
         int nh = LocalDateTime.now().getHour();
         if(fh<=nh){
             throw new IllegalArgumentException("4");
         }
+    }
+    public void okPayment( List<Integer>hourArr,long seatId,long pid){
+        for(int hour:hourArr){
+            checkAlready(seatId, hour);
+            UtilService.checkUpdateDone(timeRepo.updateStateForReservation(Text.trueState, UtilService.hourMakeToday(hour), pid), 1);
+        }
+    }
+    private PaymentEntity savePayment(int totalPrice){
+        PaymentEntity paymentEntity = PaymentEntity.builder()
+                .commonColumn(CommonColumn.builder().state(Text.waitState).build())
+                .price(totalPrice)
+                .buyer(MemberEntity.builder().id(UtilService.getLoginInfo().getId()).build()).build();
+        paymentRepo.save(paymentEntity);
+        return paymentEntity;
     }
 }

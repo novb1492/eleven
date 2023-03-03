@@ -21,6 +21,8 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -191,6 +193,11 @@ public class UtilService {
         return paymentInfo;
     }
 
+    /**
+     * kg이니시스 결제 성공시 결제정보 요청 함수
+     * @param P_REQ_URL
+     * @return
+     */
     public static String[] getKgValues(String P_REQ_URL){
         GetMethod method = new GetMethod(P_REQ_URL);
         HttpClient client = new HttpClient();
@@ -216,6 +223,27 @@ public class UtilService {
             throw new RuntimeException("결제 성공 후 내역 추출중 에러가 발생했습니다");
         }finally {
             method.releaseConnection();
+        }
+    }
+
+    /**
+     * 시간으로 오늘 날짜 타임스탬프 만들어주는 함수
+     * @param hour
+     * @return
+     */
+    public static Timestamp hourMakeToday(int hour){
+        return Timestamp.valueOf(LocalDate.now() + " " + hour + ":00:00");
+    }
+
+    /**
+     * db update 후 원하는 만큼 update 됐는지 확인 함수
+     * 안됐을시 런타임 익셉션
+     * @param num
+     * @param num2
+     */
+    public static void checkUpdateDone(int num,int num2){
+        if(num!=num2){
+            throw new RuntimeException(Text.failUpdateDb);
         }
     }
 }

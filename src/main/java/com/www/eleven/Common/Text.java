@@ -13,6 +13,9 @@ public class Text {
     public static String cantFindInDBNum = "404";
     public static int needReLoginState = 403;
     public static int waitState = 3;
-
+    public static String notEqualsPrice = "1000";
+    public static String alreadyReservation = "8";
+    public static String failUpdateDb = "999";
+    public static String notFoundInDb = "5";
 
 }
